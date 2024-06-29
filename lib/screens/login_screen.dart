@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'job_posting_screen.dart'; // Import the JobPostingScreen
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -58,11 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     });
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              JobPostingScreen()), // Navigate to JobPostingScreen
                     );
                   }
                 } catch (e) {
-                  print(e);
                   setState(() {
                     errorMessage = e.toString();
                   });
@@ -78,11 +80,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   if (user != null) {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => HomeScreen()),
+                      MaterialPageRoute(
+                          builder: (context) =>
+                              JobPostingScreen()), // Navigate to JobPostingScreen
                     );
                   }
                 } catch (e) {
-                  print(e);
                   setState(() {
                     errorMessage = e.toString();
                   });
