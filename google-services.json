@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1040016640643",
+    "firebase_url": "https://mybellon-agent-v1-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "mybellon-agent-v1",
+    "storage_bucket": "mybellon-agent-v1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040016640643:android:eddad1d42ad14342c769b6",
+        "android_client_info": {
+          "package_name": "com.mybellon.agentapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4S7nJ-SXcNEiOs9aQW1Ia6Kro-ZLmpkQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
