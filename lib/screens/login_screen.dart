@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'job_posting_screen.dart'; // Import the JobPostingScreen
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -11,15 +12,57 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   late String email;
   late String password;
   String errorMessage = '';
 
   @override
+  void initState() {
+    super.initState();
+    _requestPermissions();
+    _firebaseMessaging.getToken().then((token) {
+      print("FCM Token: $token");
+      _firebaseMessaging.subscribeToTopic('job_posts');
+    }).catchError((error) {
+      print("Error getting FCM token: $error");
+    });
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification? notification = message.notification;
+      AndroidNotification? android = message.notification?.android;
+      if (notification != null && android != null) {
+        showDialog(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+              title: Text(notification.title ?? ''),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [Text(notification.body ?? '')],
+                ),
+              ),
+            );
+          },
+        );
+      }
+    });
+  }
+
+  void _requestPermissions() {
+    _firebaseMessaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+      provisional: false,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Login'),
+        title: Text('MyBellon Agent App'), // App Title
       ),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 24.0),
@@ -53,15 +96,17 @@ class _LoginScreenState extends State<LoginScreen> {
                   final user = await _auth.createUserWithEmailAndPassword(
                       email: email, password: password);
                   if (user != null) {
-                    await _firestore.collection('users').add({
+                    await _firestore.collection('users').doc(email).set({
+                      // Use email as document ID
                       'email': email,
+                      'available': false,
                       'createdAt': FieldValue.serverTimestamp(),
                     });
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
-                              JobPostingScreen()), // Navigate to JobPostingScreen
+                              HomeScreen()), // Navigate to HomeScreen
                     );
                   }
                 } catch (e) {
@@ -82,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       context,
                       MaterialPageRoute(
                           builder: (context) =>
-                              JobPostingScreen()), // Navigate to JobPostingScreen
+                              HomeScreen()), // Navigate to HomeScreen
                     );
                   }
                 } catch (e) {
@@ -101,20 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class HomeScreen extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Home'),
-      ),
-      body: Center(
-        child: Text('Welcome to the Home Screen!'),
       ),
     );
   }

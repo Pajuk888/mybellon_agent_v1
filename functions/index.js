@@ -1,19 +1,25 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * const {onCall} = require("firebase-functions/v2/https");
- * const {onDocumentWritten} = require("firebase-functions/v2/firestore");
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
+const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+admin.initializeApp();
 
-const {onRequest} = require("firebase-functions/v2/https");
-const logger = require("firebase-functions/logger");
+exports.sendNotificationOnNewJobPost = functions.firestore
+    .document('job_posts/{jobId}')
+    .onCreate((snap, context) => {
+        const newValue = snap.data();
 
-// Create and deploy your first functions
-// https://firebase.google.com/docs/functions/get-started
+        const payload = {
+            notification: {
+                title: 'New Job Posted!',
+                body: `A new job has been posted: ${newValue.title}`,
+                clickAction: 'FLUTTER_NOTIFICATION_CLICK'
+            }
+        };
 
-// exports.helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+        return admin.messaging().sendToTopic('job_posts', payload)
+            .then((response) => {
+                console.log('Notification sent successfully:', response);
+            })
+            .catch((error) => {
+                console.log('Notification sending failed:', error);
+            });
+    });

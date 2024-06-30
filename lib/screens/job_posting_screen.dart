@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../main.dart';
 
 class JobPostingScreen extends StatefulWidget {
   @override
@@ -8,12 +9,52 @@ class JobPostingScreen extends StatefulWidget {
 }
 
 class _JobPostingScreenState extends State<JobPostingScreen> {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
-  late String title;
-  late String description;
-  late String payRate;
-  String? errorMessage;
+  final TextEditingController _titleController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _payRateController =
+      TextEditingController(); // New Controller for Pay Rate
+
+  void addJobPost() async {
+    try {
+      await FirebaseFirestore.instance.collection('job_posts').add({
+        'title': _titleController.text,
+        'description': _descriptionController.text,
+        'pay_rate': _payRateController.text, // Adding Pay Rate
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+      showNotification();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Job posted successfully')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to post job: $e')),
+      );
+    }
+  }
+
+  Future<void> showNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      'job_post_channel', // channel ID
+      'Job Post Notifications', // channel name
+      channelDescription:
+          'Notification channel for job posts', // channel description
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: false,
+      sound: RawResourceAndroidNotificationSound(
+          'notification'), // sound file in res/raw
+    );
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+    await flutterLocalNotificationsPlugin.show(
+      0, // notification ID
+      'New Job Posted',
+      'A new job has been posted: ${_titleController.text}',
+      platformChannelSpecifics,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -22,70 +63,27 @@ class _JobPostingScreenState extends State<JobPostingScreen> {
         title: Text('Post a Job'),
       ),
       body: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 24.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             TextField(
-              onChanged: (value) {
-                title = value;
-              },
-              decoration: InputDecoration(
-                hintText: 'Enter job title',
-              ),
+              controller: _titleController,
+              decoration: InputDecoration(labelText: 'Job Title'),
             ),
-            SizedBox(height: 8.0),
             TextField(
-              onChanged: (value) {
-                description = value;
-              },
-              decoration: InputDecoration(
-                hintText: 'Enter job description',
-              ),
+              controller: _descriptionController,
+              decoration: InputDecoration(labelText: 'Job Description'),
             ),
-            SizedBox(height: 8.0),
             TextField(
-              onChanged: (value) {
-                payRate = value;
-              },
-              decoration: InputDecoration(
-                hintText: 'Enter pay rate',
-              ),
+              controller: _payRateController,
+              decoration:
+                  InputDecoration(labelText: 'Pay Rate'), // New Pay Rate Field
             ),
-            SizedBox(height: 24.0),
+            SizedBox(height: 20),
             ElevatedButton(
-              onPressed: () async {
-                try {
-                  final user = _auth.currentUser;
-                  if (user != null) {
-                    await _firestore.collection('jobs').add({
-                      'title': title,
-                      'description': description,
-                      'payRate': payRate,
-                      'postedBy': user.email,
-                      'createdAt': FieldValue.serverTimestamp(),
-                    });
-                    setState(() {
-                      errorMessage = null;
-                    });
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Job posted successfully!')),
-                    );
-                  }
-                } catch (e) {
-                  setState(() {
-                    errorMessage = e.toString();
-                  });
-                }
-              },
+              onPressed: addJobPost,
               child: Text('Post Job'),
             ),
-            if (errorMessage != null)
-              Text(
-                errorMessage!,
-                style: TextStyle(color: Colors.red),
-              ),
           ],
         ),
       ),
